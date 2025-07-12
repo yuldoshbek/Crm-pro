@@ -1,103 +1,58 @@
 // src/finance-dashboard.ts
 import { LitElement, html, css } from 'lit';
-import { customElement, state, property } from 'lit/decorators.js';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from './firebase-init';
-
-export interface FinanceOperation {
-  id: string;
-  title: string;
-  amount: number;
-  type: 'income' | 'expense';
-  date: string;
-  comment?: string;
-}
+import { customElement, property, state } from 'lit/decorators.js';
+import type { FinanceOperation } from './types.js';
 
 @customElement('finance-dashboard')
 export class FinanceDashboard extends LitElement {
-  @property({ type: String })
-  collectionPath = '';
+  @property({ attribute: false })
+  operations: FinanceOperation[] = [];
 
-  @state()
-  private _operations: FinanceOperation[] = [];
-  @state()
-  private _filterType: 'all' | 'income' | 'expense' = 'all';
-  @state()
-  private _filterStartDate = '';
-  @state()
-  private _filterEndDate = '';
-
-  private _unsubscribe: (() => void) | null = null;
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this._unsubscribe?.();
-  }
-
-  updated(changedProperties: Map<string, any>) {
-    if (changedProperties.has('collectionPath') && this.collectionPath) {
-      this._listenForFinances();
-    }
-  }
-
-  private _listenForFinances() {
-    this._unsubscribe?.();
-    const financesRef = collection(db, this.collectionPath);
-    const q = query(financesRef, orderBy('date', 'desc'));
-    this._unsubscribe = onSnapshot(q, (snapshot) => {
-      this._operations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FinanceOperation));
-    });
-  }
-
-  private get _filteredOperations() {
-    const filtered = this._operations.filter(op => {
-      const typeMatch = this._filterType === 'all' || op.type === this._filterType;
-      const startDateMatch = !this._filterStartDate || op.date >= this._filterStartDate;
-      const endDateMatch = !this._filterEndDate || op.date <= this._filterEndDate;
-      return typeMatch && startDateMatch && endDateMatch;
-    });
-    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }
+  // --- НОВЫЕ состояния для хранения значений фильтров ---
+  @state() private _filterType: 'all' | 'income' | 'expense' = 'all';
+  @state() private _filterStartDate = '';
+  @state() private _filterEndDate = '';
 
   static styles = css`
-    :host { 
-      display: block; 
-      font-family: var(--font-main);
+    :host {
+      display: block;
     }
-    
-    .finance-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
     }
-    .summary-card {
-      background-color: #fff;
-      border-radius: 12px;
-      padding: 1.5rem;
-      box-shadow: var(--shadow-md);
-      text-align: left;
-    }
-    .summary-label {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      margin-bottom: 0.5rem;
-    }
-    .summary-value {
+    .page-header h1 {
       font-size: 2rem;
       font-weight: 700;
-      line-height: 1.2;
+      margin: 0;
+      color: var(--text-primary);
     }
-    .income { color: #10b981; }
-    .expense { color: #ef4444; }
-    .balance { color: var(--text-primary); }
+    .add-btn {
+      background-color: var(--accent-primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background-color 0.2s ease;
+    }
+    .add-btn:hover {
+      filter: brightness(1.1);
+    }
 
+    /* --- НОВЫЕ СТИЛИ для панели фильтров --- */
     .controls-panel {
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem;
       padding: 1rem 1.5rem;
-      background-color: #fff;
+      background-color: var(--bg-card);
       border-radius: 12px;
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--shadow-sm);
     }
     .filters { 
       display: flex; 
@@ -119,14 +74,41 @@ export class FinanceDashboard extends LitElement {
       padding: 0.5rem 0.75rem; 
       border-radius: 8px; 
       border: 1px solid var(--border-color); 
-      background-color: #f9fafb;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
       font-family: inherit;
     }
-    
-    .table-container {
-      background-color: #fff;
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .summary-card {
+      background-color: var(--bg-card);
       border-radius: 12px;
-      box-shadow: var(--shadow-md);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .summary-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+    .summary-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .income { color: #10b981; }
+    .expense { color: #ef4444; }
+    .balance { color: var(--text-primary); }
+
+    .table-container {
+      background-color: var(--bg-card);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
       overflow: hidden;
     }
     table { 
@@ -139,30 +121,63 @@ export class FinanceDashboard extends LitElement {
       border-bottom: 1px solid var(--border-color); 
     }
     th { 
-      background-color: #f9fafb;
+      background-color: var(--bg-main);
       color: var(--text-secondary);
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-    td {
-      font-weight: 500;
+    tbody tr {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    tbody tr:hover {
+      background-color: var(--bg-hover);
     }
     tr:last-child td { 
       border-bottom: none; 
     }
-    td.amount.income { font-weight: 700; }
-    td.amount.expense { font-weight: 700; }
+    td.amount.income { font-weight: 600; }
+    td.amount.expense { font-weight: 600; }
   `;
 
+  private _handleAddNew() {
+    this.dispatchEvent(new CustomEvent('add-finance-operation', { bubbles: true, composed: true }));
+  }
+
+  private _handleEdit(op: FinanceOperation) {
+    this.dispatchEvent(new CustomEvent('edit-finance-operation', { detail: { operation: op }, bubbles: true, composed: true }));
+  }
+
+  // --- НОВЫЙ getter для получения отфильтрованных операций ---
+  private get _filteredOperations() {
+    return this.operations.filter(op => {
+      const typeMatch = this._filterType === 'all' || op.type === this._filterType;
+      const startDateMatch = !this._filterStartDate || op.date >= this._filterStartDate;
+      const endDateMatch = !this._filterEndDate || op.date <= this._filterEndDate;
+      return typeMatch && startDateMatch && endDateMatch;
+    });
+  }
+
   render() {
+    // ОБНОВЛЕНО: Используем отфильтрованные данные
     const operationsToDisplay = this._filteredOperations;
+    
     const totalIncome = operationsToDisplay.filter(op => op.type === 'income').reduce((sum, op) => sum + op.amount, 0);
     const totalExpense = operationsToDisplay.filter(op => op.type === 'expense').reduce((sum, op) => sum + op.amount, 0);
     const balance = totalIncome - totalExpense;
-    const currencyFormat = (value: number) => value.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 0 });
+    
+    const currencyFormat = (value: number) => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(value);
 
     return html`
+      <div class="page-header">
+        <h1>Финансы</h1>
+        <button class="add-btn" @click=${this._handleAddNew}>
+          <i class="fas fa-plus"></i> Новая операция
+        </button>
+      </div>
+
+      <!-- НОВАЯ ПАНЕЛЬ ФИЛЬТРОВ -->
       <div class="controls-panel">
         <div class="filters">
           <div class="filter-group">
@@ -184,7 +199,7 @@ export class FinanceDashboard extends LitElement {
         </div>
       </div>
 
-      <div class="finance-grid">
+      <div class="summary-grid">
         <div class="summary-card">
           <div class="summary-label">Доход</div>
           <div class="summary-value income">${currencyFormat(totalIncome)}</div>
@@ -207,20 +222,29 @@ export class FinanceDashboard extends LitElement {
               <th>Сумма</th>
               <th>Тип</th>
               <th>Дата</th>
+              <th>Категория</th>
             </tr>
           </thead>
           <tbody>
+            <!-- ОБНОВЛЕНО: Отображаем отфильтрованные данные -->
             ${operationsToDisplay.map(op => html`
-              <tr>
+              <tr @click=${() => this._handleEdit(op)}>
                 <td>${op.title}</td>
                 <td class="amount ${op.type}">${currencyFormat(op.amount)}</td>
                 <td>${op.type === 'income' ? 'Доход' : 'Расход'}</td>
                 <td>${new Date(op.date).toLocaleDateString('ru-RU')}</td>
+                <td>${op.category || '–'}</td>
               </tr>
             `)}
           </tbody>
         </table>
       </div>
     `;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'finance-dashboard': FinanceDashboard;
   }
 }

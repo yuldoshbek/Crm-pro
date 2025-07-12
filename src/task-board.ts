@@ -1,8 +1,15 @@
 // src/task-board.ts
 import { LitElement, html } from 'lit';
-import { customElement, state, property } from 'lit/decorators.js';
-import type { Task, ChecklistItem } from './types.js';
+import { customElement, property, state } from 'lit/decorators.js';
+import type { Task } from './types.js';
 import { taskBoardStyles } from './task-board.styles.js';
+
+const STATUSES: Record<Task['status'], string> = {
+  todo: 'К выполнению',
+  inprogress: 'В работе',
+  review: 'На проверке',
+  done: 'Готово'
+};
 
 @customElement('task-board')
 export class TaskBoard extends LitElement {
@@ -10,119 +17,124 @@ export class TaskBoard extends LitElement {
 
   @property({ attribute: false })
   tasks: Task[] = [];
-  
+
+  // --- НОВОЕ: Состояние для отслеживания перетаскиваемой задачи ---
   @state() private _draggedTaskId: string | null = null;
-  
-  private _getChecklistProgress(items: ChecklistItem[] = []) {
-    const total = items.length;
-    if (!total) return { completed: 0, total: 0 };
-    const completed = items.filter(item => item.completed).length;
-    return { completed, total };
+
+  private _getTasksByStatus(status: Task['status']) {
+    return this.tasks.filter(task => task.status === status);
   }
   
+  private _handleAddTask() {
+    this.dispatchEvent(new CustomEvent('add-task', { bubbles: true, composed: true }));
+  }
+
+  private _handleEditTask(task: Task) {
+    this.dispatchEvent(new CustomEvent('edit-task', {
+      detail: { task },
+      bubbles: true,
+      composed: true
+    }));
+  }
+
+  // --- НОВЫЕ методы для обработки Drag & Drop ---
+
   private _handleDragStart(e: DragEvent, task: Task) {
     this._draggedTaskId = task.id;
-    const target = e.target as HTMLElement;
-    setTimeout(() => {
-      target.classList.add('dragging');
-    }, 0);
+    // Добавляем класс для визуального эффекта
+    (e.target as HTMLElement).classList.add('dragging');
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
     }
   }
 
   private _handleDragEnd(e: DragEvent) {
+    // Убираем визуальный эффект после окончания перетаскивания
     (e.target as HTMLElement).classList.remove('dragging');
     this._draggedTaskId = null;
   }
 
   private _handleDragOver(e: DragEvent) {
-    e.preventDefault(); 
-    (e.currentTarget as HTMLElement).classList.add('drag-over');
+    e.preventDefault(); // Это обязательно, чтобы событие drop сработало
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'move';
     }
   }
-
-  private _handleDragLeave(e: DragEvent) {
-    (e.currentTarget as HTMLElement).classList.remove('drag-over');
-  }
-
-  private _handleDrop(e: DragEvent) {
-    e.preventDefault();
-    const columnEl = (e.currentTarget as HTMLElement);
-    columnEl.classList.remove('drag-over');
-    const newStatus = columnEl.dataset.status;
-
-    if (newStatus && this._draggedTaskId) {
-      this.dispatchEvent(new CustomEvent('update-task-status', {
-        detail: { taskId: this._draggedTaskId, newStatus },
-        bubbles: true,
-        composed: true
-      }));
-    }
-  }
   
-  private _requestOpenModal(task: Task) {
-    this.dispatchEvent(new CustomEvent('open-task-modal', { detail: { task }, bubbles: true, composed: true }));
+  private _handleDrop(e: DragEvent, newStatus: Task['status']) {
+    e.preventDefault();
+    if (!this._draggedTaskId) return;
+
+    // Генерируем новое событие, чтобы сообщить родителю о смене статуса
+    this.dispatchEvent(new CustomEvent('update-task-status', {
+      detail: {
+        taskId: this._draggedTaskId,
+        newStatus: newStatus
+      },
+      bubbles: true,
+      composed: true
+    }));
   }
 
   render() {
-    const columns: Record<string, { title: string, tasks: Task[] }> = {
-        todo: { title: 'К выполнению', tasks: [] },
-        inprogress: { title: 'В работе', tasks: [] },
-        review: { title: 'На проверке', tasks: [] },
-        done: { title: 'Готово', tasks: [] }
-    };
-    
-    this.tasks.forEach(task => { 
-      if (columns[task.status]) {
-        columns[task.status].tasks.push(task);
-      }
-    });
-
     return html`
       <div class="page-header">
         <h1>Задачи</h1>
-        <button class="add-task-btn" @click=${() => this.dispatchEvent(new CustomEvent('add-task'))}>
-            <i class="fas fa-plus"></i> Новая задача
+        <button class="add-task-btn" @click=${this._handleAddTask}>
+          <i class="fas fa-plus"></i> Новая задача
         </button>
       </div>
+
       <div class="board">
-        ${Object.entries(columns).map(([status, columnData]) => html`
-          <div class="column" data-status=${status} @dragover=${this._handleDragOver} @dragleave=${this._handleDragLeave} @drop=${this._handleDrop}>
-            <div class="column-header">
-                <h3 class="column-title">${columnData.title}</h3>
-                <span class="task-count">${columnData.tasks.length}</span>
-            </div>
-            ${columnData.tasks.map(task => {
-              const progress = this._getChecklistProgress(task.checklist);
-              return html`
-                <div class="task-card" draggable="true" @dragstart=${(e: DragEvent) => this._handleDragStart(e, task)} @dragend=${this._handleDragEnd} @click=${() => this._requestOpenModal(task)}>
-                  <div class="priority-indicator priority-${task.priority}"></div>
-                  <div class="task-title">${task.title}</div>
-                  <div class="task-footer">
-                    <div class="task-meta">
-                      ${progress.total > 0 ? html`
-                        <span class="meta-item">
-                          <i class="fas fa-check-square"></i>
-                          <span>${progress.completed}/${progress.total}</span>
-                        </span>
+        ${Object.entries(STATUSES).map(([status, title]) => {
+          const tasksInColumn = this._getTasksByStatus(status as Task['status']);
+          return html`
+            <!-- ОБНОВЛЕНО: Добавлены обработчики событий для колонки -->
+            <div 
+              class="column" 
+              data-status=${status}
+              @dragover=${this._handleDragOver}
+              @drop=${(e: DragEvent) => this._handleDrop(e, status as Task['status'])}
+            >
+              <div class="column-header">
+                <h3 class="column-title">${title}</h3>
+                <span class="task-count">${tasksInColumn.length}</span>
+              </div>
+              <div class="task-list">
+                ${tasksInColumn.map(task => html`
+                  <!-- ОБНОВЛЕНО: Карточка теперь перетаскиваемая -->
+                  <div
+                    class="task-card"
+                    draggable="true"
+                    @click=${() => this._handleEditTask(task)}
+                    @dragstart=${(e: DragEvent) => this._handleDragStart(e, task)}
+                    @dragend=${this._handleDragEnd}
+                  >
+                    <div class="task-title">${task.title}</div>
+                    <div class="task-footer">
+                      <div class="priority-indicator priority-${task.priority}">
+                        ${task.priority}
+                      </div>
+                      ${task.dueDate ? html`
+                        <div class="due-date">
+                          <i class="far fa-calendar-alt"></i>
+                          <span>${new Date(task.dueDate).toLocaleDateString('ru-RU')}</span>
+                        </div>
                       ` : ''}
                     </div>
-                    ${task.dueDate ? html`
-                      <span class="meta-item">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>${new Date(task.dueDate).toLocaleDateString()}</span>
-                      </span>
-                    ` : ''}
                   </div>
-                </div>
-              `;
-            })}
-          </div>
-        `)}
+                `)}
+              </div>
+            </div>
+          `;
+        })}
       </div>
     `;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'task-board': TaskBoard;
   }
 }

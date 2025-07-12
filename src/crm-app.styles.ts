@@ -12,17 +12,18 @@ export const crmAppStyles = css`
     display: flex;
     width: 100%;
     height: 100%;
-    background-color: #f7f8fc;
+    background-color: var(--bg-main);
   }
   
   .sidebar {
     width: 260px;
     flex-shrink: 0;
-    background-color: #ffffff;
+    background-color: var(--bg-sidebar);
     border-right: 1px solid var(--border-color);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
   .main-content {
     flex-grow: 1;
@@ -39,6 +40,7 @@ export const crmAppStyles = css`
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
+    color: var(--text-primary);
   }
 
   .nav-menu ul {
@@ -59,13 +61,13 @@ export const crmAppStyles = css`
     transition: all 0.2s ease;
   }
   .nav-menu li a:hover {
-    background-color: #f0f3f8;
+    background-color: var(--bg-hover);
     color: var(--accent-primary);
   }
   .nav-menu li a.active {
     background-color: var(--accent-primary);
     color: white;
-    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+    box-shadow: var(--shadow-md);
   }
   .nav-menu li a i {
     width: 20px;
@@ -92,7 +94,14 @@ export const crmAppStyles = css`
     font-weight: bold;
     text-transform: uppercase;
   }
-  .user-email { font-weight: 500; }
+  .user-email { 
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
   .logout-btn {
     margin-left: auto;
     background: none;
@@ -100,5 +109,10 @@ export const crmAppStyles = css`
     cursor: pointer;
     color: var(--text-secondary);
     font-size: 1.2rem;
+    padding: 0.5rem;
+    border-radius: 50%;
+  }
+  .logout-btn:hover {
+    background-color: var(--bg-hover);
   }
 `;
