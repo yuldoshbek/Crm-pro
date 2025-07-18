@@ -5,7 +5,8 @@ export const taskBoardStyles = css`
   :host {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    /* Занимаем всю доступную высоту */
+    height: calc(100vh - 4rem); /* (100% высоты viewport минус padding main-content) */
   }
 
   .page-header {
@@ -32,10 +33,12 @@ export const taskBoardStyles = css`
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
   }
   .add-task-btn:hover {
     filter: brightness(1.1);
+    box-shadow: var(--shadow-md);
   }
 
   .board {
@@ -43,23 +46,31 @@ export const taskBoardStyles = css`
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
     flex-grow: 1;
-    overflow-x: auto;
+    overflow-x: auto; /* Горизонтальный скролл для маленьких экранов */
+    min-height: 0; /* Важно для flexbox/grid контейнеров */
   }
 
   .column {
     background-color: var(--bg-main);
     border-radius: 12px;
-    padding: 1rem;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    max-height: 100%;
+    transition: background-color 0.2s ease;
   }
+  
+  /* Визуальный отклик при перетаскивании над колонкой */
+  .column.drag-over {
+    background-color: var(--accent-primary-light);
+  }
+
   .column-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 0.25rem 1rem;
+    padding: 1rem;
     border-bottom: 2px solid var(--border-color);
+    flex-shrink: 0;
   }
   .column-title {
     font-weight: 600;
@@ -77,9 +88,9 @@ export const taskBoardStyles = css`
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding-top: 1rem;
+    padding: 1rem;
     flex-grow: 1;
-    overflow-y: auto;
+    overflow-y: auto; /* Вертикальный скролл внутри колонки */
   }
 
   .task-card {
@@ -89,11 +100,19 @@ export const taskBoardStyles = css`
     box-shadow: var(--shadow-sm);
     border-left: 4px solid transparent;
     cursor: pointer;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .task-card:hover {
     box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
   }
+
+  /* Стиль для перетаскиваемой карточки */
+  .task-card.dragging {
+    opacity: 0.5;
+    transform: rotate(3deg);
+  }
+
   .task-title {
     font-weight: 500;
     color: var(--text-primary);
@@ -111,18 +130,22 @@ export const taskBoardStyles = css`
     border-radius: 6px;
     font-weight: 500;
     text-transform: capitalize;
+    font-size: 0.75rem;
   }
   .priority-high {
     background-color: #fee2e2;
     color: #b91c1c;
+    border-left-color: #ef4444;
   }
   .priority-medium {
     background-color: #ffedd5;
     color: #c2410c;
+    border-left-color: #f97316;
   }
   .priority-low {
     background-color: #d1fae5;
     color: #047857;
+    border-left-color: #10b981;
   }
   .due-date {
     display: flex;

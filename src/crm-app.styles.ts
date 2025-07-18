@@ -41,6 +41,10 @@ export const crmAppStyles = css`
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary);
+    /* Добавляем небольшой градиент для акцента */
+    background: linear-gradient(45deg, var(--accent-primary), #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .nav-menu ul {
@@ -51,7 +55,7 @@ export const crmAppStyles = css`
   .nav-menu li a {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem; /* Немного увеличим отступ */
     padding: 0.8rem 1rem;
     margin-bottom: 0.5rem;
     border-radius: 8px;
@@ -72,6 +76,14 @@ export const crmAppStyles = css`
   .nav-menu li a i {
     width: 20px;
     text-align: center;
+    font-size: 1.1rem; /* Сделаем иконки чуть крупнее */
+  }
+
+  /* Разделитель перед настройками */
+  .nav-menu li.separator {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 1rem 0;
   }
 
   .user-profile {
@@ -100,10 +112,9 @@ export const crmAppStyles = css`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 120px;
+    max-width: 100px; /* Уменьшим, чтобы кнопки помещались */
   }
   .logout-btn {
-    margin-left: auto;
     background: none;
     border: none;
     cursor: pointer;
@@ -111,8 +122,14 @@ export const crmAppStyles = css`
     font-size: 1.2rem;
     padding: 0.5rem;
     border-radius: 50%;
+    margin-left: auto; /* Прижимаем первую кнопку вправо */
+  }
+  /* Убираем лишний отступ у второй кнопки */
+  .logout-btn + .logout-btn {
+      margin-left: 0.25rem;
   }
   .logout-btn:hover {
     background-color: var(--bg-hover);
+    color: var(--text-primary);
   }
 `;

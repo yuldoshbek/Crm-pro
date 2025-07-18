@@ -5,18 +5,25 @@ import type { FinanceOperation } from './types.js';
 
 @customElement('finance-form')
 export class FinanceForm extends LitElement {
-  // Сюда будет передаваться существующая операция для редактирования
   @property({ attribute: false })
   operation?: FinanceOperation;
 
   static styles = css`
-    form { display: flex; flex-direction: column; gap: 1rem; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    form { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 1.25rem; 
+    }
+    .form-row { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 1.25rem; 
+    }
     label { 
       display: block; 
       font-size: 0.875rem; 
       font-weight: 500; 
-      margin-bottom: 0.25rem; 
+      margin-bottom: 0.35rem; 
       color: var(--text-secondary); 
     }
     input, select, textarea {
@@ -29,6 +36,12 @@ export class FinanceForm extends LitElement {
       font-size: 1rem;
       background-color: var(--bg-main);
       color: var(--text-primary);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-primary-light);
     }
     .actions { 
       display: flex; 
@@ -41,13 +54,16 @@ export class FinanceForm extends LitElement {
       background-color: var(--accent-primary); 
       color: white; 
       border: none; 
-      padding: 0.6rem 1.5rem; 
+      padding: 0.75rem 1.5rem; 
       border-radius: 8px; 
       cursor: pointer; 
-      font-weight: bold; 
+      font-weight: 600; 
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
     }
     .save-btn:hover {
         filter: brightness(1.1);
+        box-shadow: var(--shadow-md);
     }
     .delete-btn {
         background: none;
@@ -56,6 +72,11 @@ export class FinanceForm extends LitElement {
         cursor: pointer;
         font-weight: 500;
         margin-right: auto;
+        padding: 0.5rem;
+        border-radius: 6px;
+    }
+    .delete-btn:hover {
+      background-color: #fee2e2;
     }
   `;
 
@@ -65,13 +86,11 @@ export class FinanceForm extends LitElement {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
     
-    // Преобразуем сумму в число
     const processedData = {
       ...data,
       amount: parseFloat(data.amount as string)
     };
 
-    // Генерируем событие 'save-finance-operation'
     this.dispatchEvent(new CustomEvent('save-finance-operation', {
       detail: { data: processedData },
       bubbles: true,
@@ -88,7 +107,6 @@ export class FinanceForm extends LitElement {
   }
 
   render() {
-    // Устанавливаем сегодняшнюю дату по умолчанию для новых операций
     const today = new Date().toISOString().substring(0, 10);
 
     return html`

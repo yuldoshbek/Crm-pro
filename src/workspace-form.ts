@@ -13,13 +13,13 @@ export class WorkspaceForm extends LitElement {
     form { 
       display: flex; 
       flex-direction: column; 
-      gap: 1rem; 
+      gap: 1.25rem; /* Увеличиваем отступы */
     }
     label { 
       display: block; 
       font-size: 0.875rem; 
       font-weight: 500; 
-      margin-bottom: 0.25rem; 
+      margin-bottom: 0.35rem; 
       color: var(--text-secondary); 
     }
     input, textarea {
@@ -32,6 +32,14 @@ export class WorkspaceForm extends LitElement {
       font-size: 1rem;
       background-color: var(--bg-main);
       color: var(--text-primary);
+      /* Добавляем плавные переходы */
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    /* Добавляем подсветку при фокусе */
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-primary-light);
     }
     .actions { 
       display: flex; 
@@ -44,13 +52,16 @@ export class WorkspaceForm extends LitElement {
       background-color: var(--accent-primary); 
       color: white; 
       border: none; 
-      padding: 0.6rem 1.5rem; 
+      padding: 0.75rem 1.5rem; /* Увеличиваем padding */
       border-radius: 8px; 
       cursor: pointer; 
-      font-weight: bold; 
+      font-weight: 600; /* Делаем шрифт жирнее */
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
     }
     .save-btn:hover {
         filter: brightness(1.1);
+        box-shadow: var(--shadow-md);
     }
   `;
 

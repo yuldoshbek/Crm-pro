@@ -1,6 +1,6 @@
 // src/modal-dialog.ts
 import { LitElement, html, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement } from 'lit/decorators.js';
 
 @customElement('modal-dialog')
 export class ModalDialog extends LitElement {
@@ -16,31 +16,33 @@ export class ModalDialog extends LitElement {
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            /* Анимация появления */
-            animation: fadeIn 0.3s ease;
+            /* Улучшенная анимация появления фона */
+            animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .panel {
             background-color: var(--bg-card);
-            padding: 1.5rem 2rem;
+            padding: 0; /* Убираем внутренний padding, чтобы заголовок и контент управляли им */
             border-radius: 12px;
             box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 600px;
-            /* Анимация появления */
-            animation: slideInUp 0.3s ease;
+            /* Улучшенная анимация появления панели */
+            animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh; /* Ограничиваем высоту для больших форм */
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            padding: 1.5rem 2rem;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1rem;
+            flex-shrink: 0; /* Заголовок не должен сжиматься */
         }
         
-        /* Стили для заголовка, который будет вставлен через <slot> */
         ::slotted(h2) {
             margin: 0;
             font-size: 1.5rem;
@@ -54,9 +56,15 @@ export class ModalDialog extends LitElement {
             line-height: 1;
             cursor: pointer;
             color: var(--text-secondary);
+            transition: color 0.2s ease;
         }
         .close-btn:hover {
             color: var(--text-primary);
+        }
+
+        .content {
+            padding: 1.5rem 2rem;
+            overflow-y: auto; /* Добавляем прокрутку для контента, если он не помещается */
         }
 
         @keyframes fadeIn {
@@ -65,13 +73,12 @@ export class ModalDialog extends LitElement {
         }
 
         @keyframes slideInUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from { transform: translateY(50px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
         }
     `;
 
     private _close() {
-        // Генерируем событие, чтобы родительский компонент знал, что нужно закрыть окно
         this.dispatchEvent(new CustomEvent('close', { bubbles: true, composed: true }));
     }
 

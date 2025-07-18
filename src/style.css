@@ -4,18 +4,18 @@
 :root {
   --font-main: 'Inter', system-ui, sans-serif;
 
-  --bg-main: #f7f8fc; /* Очень светло-серый фон */
+  --bg-main: #f7f8fc;
   --bg-sidebar: #ffffff;
   --bg-card: #ffffff;
   --bg-hover: #f0f3f8;
 
-  --text-primary: #111827; /* Почти черный */
-  --text-secondary: #6b7280; /* Серый */
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
   --text-light: #ffffff;
 
   --border-color: #e5e7eb;
   
-  --accent-primary: #4f46e5; /* Яркий фиолетово-синий */
+  --accent-primary: #4f46e5;
   --accent-primary-light: #eef2ff;
   --accent-danger: #ef4444;
 
@@ -25,20 +25,19 @@
 }
 
 /* --- ТЕМНАЯ ТЕМА --- */
-/* Применяется, когда к body добавляется класс .dark */
 body.dark {
-  --bg-main: #111827; /* Очень темный фон */
+  --bg-main: #111827;
   --bg-sidebar: #1f2937;
   --bg-card: #1f2937;
   --bg-hover: #374151;
 
-  --text-primary: #f9fafb; /* Очень светло-серый текст */
-  --text-secondary: #9ca3af; /* Светло-серый */
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
   --text-light: #ffffff;
 
   --border-color: #374151;
   
-  --accent-primary: #818cf8; /* Светлее для контраста на темном */
+  --accent-primary: #818cf8;
   --accent-primary-light: #3730a3;
   --accent-danger: #f87171;
 }
@@ -56,4 +55,29 @@ body {
 #app {
   width: 100%;
   height: 100vh;
+}
+
+/* --- НОВЫЙ БЛОК: ГЛОБАЛЬНЫЕ АНИМАЦИИ --- */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Класс-хелпер для применения анимации */
+.animate-fade-in {
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-slide-in-up {
+  animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }

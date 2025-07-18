@@ -4,58 +4,31 @@ import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { auth, db } from './firebase-init.js';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
-// Импортируем наши корневые компоненты
+// Импортируем все наши корневые компоненты
 import './crm-app.js';
 import './auth-shell.js';
 import './workspace-selector.js';
+import './mode-selector.js'; // <-- НОВЫЙ ИМПОРТ
 
 const appDiv = document.querySelector<HTMLDivElement>('#app')!;
 
-// --- Глобальные переменные ---
+// --- Глобальное состояние ---
+let activeMode: 'assistant' | 'projects' | null = sessionStorage.getItem('activeMode') as any;
 let activeWorkspaceId: string | null = sessionStorage.getItem('activeWorkspaceId');
 
-/**
- * Функция для парсинга URL и извлечения ID рабочего пространства из приглашения.
- * @returns {string | null} ID рабочего пространства или null.
- */
-const getWorkspaceIdFromInvite = (): string | null => {
-  const path = window.location.pathname;
-  const match = path.match(/^\/invite\/([a-zA-Z0-9]+)/);
-  if (match && match[1]) {
-    // Убираем инвайт из URL, чтобы он не мешал при перезагрузке
-    window.history.replaceState({}, document.title, '/');
-    return match[1];
-  }
-  return null;
-};
-
-/**
- * Функция для добавления пользователя в рабочее пространство.
- * @param {string} userId - ID пользователя для добавления.
- * @param {string} workspaceId - ID рабочего пространства.
- */
-const addUserToWorkspace = async (userId: string, workspaceId: string) => {
-    const workspaceRef = doc(db, 'workspaces', workspaceId);
-    try {
-        // Используем arrayUnion, чтобы безопасно добавить ID пользователя в массив members,
-        // избегая дубликатов.
-        await updateDoc(workspaceRef, {
-            members: arrayUnion(userId)
-        });
-        console.log(`Пользователь ${userId} добавлен в пространство ${workspaceId}`);
-    } catch (error) {
-        console.error("Ошибка при добавлении пользователя в пространство:", error);
-    }
-};
-
-
 // --- Функции рендеринга ---
-const renderCrmApp = (workspaceId: string) => {
-  appDiv.innerHTML = `<crm-app workspaceId="${workspaceId}"></crm-app>`;
+const renderCrmApp = (mode: 'assistant' | 'projects', workspaceId?: string) => {
+  // Передаем в crm-app и режим, и ID проекта (если он есть)
+  appDiv.innerHTML = `<crm-app mode="${mode}" workspaceId="${workspaceId || ''}"></crm-app>`;
 };
-
 const renderWorkspaceSelector = () => {
   appDiv.innerHTML = `<workspace-selector></workspace-selector>`;
+};
+const renderModeSelector = () => {
+  appDiv.innerHTML = `<mode-selector></mode-selector>`;
+};
+const renderAuthShell = () => {
+  appDiv.innerHTML = '<auth-shell></auth-shell>';
 };
 
 /**
@@ -63,60 +36,75 @@ const renderWorkspaceSelector = () => {
  */
 const bootstrapApp = () => {
   appDiv.innerHTML = `<div style="display:flex;justify-content:center;align-items:center;height:100vh;"><h2>Загрузка...</h2></div>`;
-  
-  // Проверяем, есть ли в URL приглашение
-  const inviteWorkspaceId = getWorkspaceIdFromInvite();
 
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      // Пользователь есть.
-      if (inviteWorkspaceId) {
-        // Если пользователь пришел по ссылке-приглашению
-        await addUserToWorkspace(user.uid, inviteWorkspaceId);
-        // Сразу делаем это пространство активным и рендерим приложение
-        activeWorkspaceId = inviteWorkspaceId;
-        sessionStorage.setItem('activeWorkspaceId', inviteWorkspaceId);
-        renderCrmApp(inviteWorkspaceId);
-      } else if (activeWorkspaceId) {
-        // Если пользователь просто вернулся, и у него уже есть активное пространство
-        renderCrmApp(activeWorkspaceId);
+      // Пользователь есть. Теперь решаем, что ему показать.
+      if (activeMode === 'assistant') {
+        renderCrmApp('assistant');
+      } else if (activeMode === 'projects') {
+        if (activeWorkspaceId) {
+          renderCrmApp('projects', activeWorkspaceId);
+        } else {
+          renderWorkspaceSelector();
+        }
       } else {
-        // Если пользователь вошел, но пространство не выбрано
-        renderWorkspaceSelector();
+        // Если режим еще не выбран, показываем переключатель
+        renderModeSelector();
       }
     } else {
       // Пользователя нет.
       try {
-        // Пытаемся войти анонимно. onAuthStateChanged сработает снова.
         await signInAnonymously(auth);
       } catch (error) {
         console.error("Ошибка анонимного входа:", error);
-        appDiv.innerHTML = '<auth-shell></auth-shell>';
+        renderAuthShell();
       }
     }
   });
 };
 
 // --- Глобальные обработчики событий ---
+
+// НОВЫЙ обработчик для выбора режима
+appDiv.addEventListener('select-mode', (e: Event) => {
+  const { mode } = (e as CustomEvent).detail;
+  activeMode = mode;
+  sessionStorage.setItem('activeMode', mode);
+
+  if (mode === 'assistant') {
+    renderCrmApp('assistant');
+  } else if (mode === 'projects') {
+    renderWorkspaceSelector();
+  }
+});
+
 appDiv.addEventListener('select-workspace', (e: Event) => {
   const { workspaceId } = (e as CustomEvent).detail;
   if (workspaceId) {
     activeWorkspaceId = workspaceId;
     sessionStorage.setItem('activeWorkspaceId', workspaceId);
-    renderCrmApp(workspaceId);
+    renderCrmApp('projects', workspaceId);
   }
 });
 
+// ОБНОВЛЕНО: Выход из проекта теперь возвращает к выбору режима
 appDiv.addEventListener('exit-workspace', () => {
   activeWorkspaceId = null;
+  activeMode = null;
   sessionStorage.removeItem('activeWorkspaceId');
-  renderWorkspaceSelector();
+  sessionStorage.removeItem('activeMode');
+  renderModeSelector();
 });
 
 auth.onIdTokenChanged(async (user) => {
     if (!user) {
+        // Полная очистка состояния при выходе
         activeWorkspaceId = null;
+        activeMode = null;
         sessionStorage.removeItem('activeWorkspaceId');
+        sessionStorage.removeItem('activeMode');
+        renderAuthShell();
     }
 });
 

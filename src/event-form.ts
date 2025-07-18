@@ -5,22 +5,28 @@ import type { CalendarEvent } from './types.js';
 
 @customElement('event-form')
 export class EventForm extends LitElement {
-  // Сюда будет передаваться существующее событие для редактирования
   @property({ attribute: false })
   event?: CalendarEvent;
 
-  // Сюда могут передаваться данные о клике по дате для предзаполнения
   @property({ type: String })
   startDate = '';
 
   static styles = css`
-    form { display: flex; flex-direction: column; gap: 1rem; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    form { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 1.25rem; 
+    }
+    .form-row { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 1.25rem; 
+    }
     label { 
       display: block; 
       font-size: 0.875rem; 
       font-weight: 500; 
-      margin-bottom: 0.25rem; 
+      margin-bottom: 0.35rem; 
       color: var(--text-secondary); 
     }
     input, select, textarea {
@@ -33,14 +39,22 @@ export class EventForm extends LitElement {
       font-size: 1rem;
       background-color: var(--bg-main);
       color: var(--text-primary);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-primary-light);
     }
     .checkbox-row {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        margin-top: -0.5rem; /* Компенсируем лишний отступ */
     }
     .checkbox-row input {
-        width: auto;
+        width: 1rem;
+        height: 1rem;
     }
     .actions { 
       display: flex; 
@@ -53,13 +67,16 @@ export class EventForm extends LitElement {
       background-color: var(--accent-primary); 
       color: white; 
       border: none; 
-      padding: 0.6rem 1.5rem; 
+      padding: 0.75rem 1.5rem; 
       border-radius: 8px; 
       cursor: pointer; 
-      font-weight: bold; 
+      font-weight: 600; 
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
     }
     .save-btn:hover {
         filter: brightness(1.1);
+        box-shadow: var(--shadow-md);
     }
     .delete-btn {
         background: none;
@@ -68,6 +85,11 @@ export class EventForm extends LitElement {
         cursor: pointer;
         font-weight: 500;
         margin-right: auto;
+        padding: 0.5rem;
+        border-radius: 6px;
+    }
+    .delete-btn:hover {
+      background-color: #fee2e2;
     }
   `;
 
@@ -77,15 +99,14 @@ export class EventForm extends LitElement {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
     
-    // Преобразуем данные в нужный формат
+    const isAllDay = data.allDay === 'on';
     const processedData = {
       ...data,
-      allDay: (data.allDay === 'on'), // FormData возвращает 'on' или undefined
-      start: data.allDay ? data.startDate : `${data.startDate}T${data.startTime}`,
-      end: data.allDay ? data.endDate || data.startDate : `${data.endDate || data.startDate}T${data.endTime}`,
+      allDay: isAllDay,
+      start: isAllDay ? data.startDate : `${data.startDate}T${data.startTime}`,
+      end: isAllDay ? data.endDate || data.startDate : `${data.endDate || data.startDate}T${data.endTime}`,
     };
 
-    // Удаляем ненужные поля времени, если событие на весь день
     delete (processedData as any).startTime;
     delete (processedData as any).endTime;
     
@@ -106,7 +127,7 @@ export class EventForm extends LitElement {
 
   render() {
     const start = this.event?.start ? new Date(this.event.start) : new Date(this.startDate || Date.now());
-    const end = this.event?.end ? new Date(this.event.end) : new Date(start.getTime() + 60 * 60 * 1000); // +1 час по умолчанию
+    const end = this.event?.end ? new Date(this.event.end) : new Date(start.getTime() + 60 * 60 * 1000);
 
     const startDate = start.toISOString().split('T')[0];
     const startTime = start.toTimeString().substring(0, 5);

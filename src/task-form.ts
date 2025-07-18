@@ -6,28 +6,37 @@ import { nanoid } from 'nanoid';
 
 @customElement('task-form')
 export class TaskForm extends LitElement {
-  // Сюда будет передаваться существующая задача для редактирования.
-  // Если создается новая задача, это свойство будет undefined.
   @property({ attribute: false })
   task?: Task;
 
-  // Внутреннее состояние для управления элементами чек-листа
   @state()
   private _checklistItems: ChecklistItem[] = [];
 
-  // Этот метод жизненного цикла Lit вызывается перед обновлением компонента.
-  // Мы используем его, чтобы скопировать чек-лист из входящей задачи
-  // в наше внутреннее состояние `_checklistItems`.
   willUpdate(changedProperties: Map<string | symbol, unknown>) {
     if (changedProperties.has('task')) {
+      // Создаем глубокую копию, чтобы избежать мутации оригинального объекта
       this._checklistItems = this.task?.checklist?.map(item => ({...item})) || [];
     }
   }
 
   static styles = css`
-    form { display: flex; flex-direction: column; gap: 1rem; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; color: var(--text-secondary); }
+    form { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 1.25rem; /* Немного увеличим отступы */
+    }
+    .form-row { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 1.25rem; 
+    }
+    label { 
+      display: block; 
+      font-size: 0.875rem; 
+      font-weight: 500; 
+      margin-bottom: 0.35rem; 
+      color: var(--text-secondary); 
+    }
     input, select, textarea {
       width: 100%;
       padding: 0.75rem;
@@ -38,26 +47,126 @@ export class TaskForm extends LitElement {
       font-size: 1rem;
       background-color: var(--bg-main);
       color: var(--text-primary);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    .section { margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem; }
-    .section-header { font-weight: 600; margin-bottom: 0.5rem; }
-    
-    .checklist-item { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-    .checklist-item input[type="checkbox"] { width: auto; flex-shrink: 0; }
-    .checklist-item .checklist-text { flex-grow: 1; margin-bottom: 0; font-weight: normal; }
-    .checklist-item .completed { text-decoration: line-through; color: var(--text-secondary); }
-    .item-delete-btn { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 1.25rem; padding: 0 0.5rem; margin-left: auto; border-radius: 50%; }
-    .item-delete-btn:hover { background-color: var(--bg-hover); color: var(--accent-danger); }
-    
-    .add-item { display: flex; gap: 0.5rem; margin-top: 1rem; }
-    .add-item input { flex-grow: 1; }
-    .add-btn { background-color: var(--bg-hover); border: none; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .add-btn:hover { filter: brightness(0.95); }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-primary-light);
+    }
 
-    .actions { display: flex; justify-content: flex-end; align-items: center; gap: 1rem; margin-top: 1.5rem; }
-    .save-btn { background-color: var(--accent-primary); color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .save-btn:hover { filter: brightness(1.1); }
-    .delete-btn { background: none; border: none; color: var(--accent-danger); cursor: pointer; font-weight: 500; margin-right: auto; }
+    .section { 
+      margin-top: 1rem; 
+      border-top: 1px solid var(--border-color); 
+      padding-top: 1.25rem; 
+    }
+    .section-header { 
+      font-weight: 600; 
+      margin-bottom: 1rem; 
+      font-size: 1rem;
+    }
+    
+    .checklist-item { 
+      display: flex; 
+      align-items: center; 
+      gap: 0.75rem; 
+      padding: 0.5rem;
+      border-radius: 6px;
+      transition: background-color 0.2s ease;
+    }
+    .checklist-item:hover {
+      background-color: var(--bg-hover);
+    }
+    .checklist-item input[type="checkbox"] { 
+      width: 1rem; 
+      height: 1rem;
+      flex-shrink: 0; 
+    }
+    .checklist-item .checklist-text { 
+      flex-grow: 1; 
+      margin-bottom: 0; 
+      font-weight: 400; 
+      color: var(--text-primary);
+    }
+    .checklist-item .completed { 
+      text-decoration: line-through; 
+      color: var(--text-secondary); 
+    }
+    .item-delete-btn { 
+      background: none; 
+      border: none; 
+      color: var(--text-secondary); 
+      cursor: pointer; 
+      font-size: 1.25rem; 
+      padding: 0 0.5rem; 
+      margin-left: auto; 
+      border-radius: 50%;
+      opacity: 0.5;
+      transition: all 0.2s ease;
+    }
+    .checklist-item:hover .item-delete-btn {
+      opacity: 1;
+    }
+    .item-delete-btn:hover {
+      color: var(--accent-danger);
+      background-color: var(--bg-card);
+    }
+    
+    .add-item { 
+      display: flex; 
+      gap: 0.5rem; 
+      margin-top: 1rem; 
+    }
+    .add-item input { flex-grow: 1; }
+    .add-btn { 
+      background-color: var(--bg-hover); 
+      border: 1px solid var(--border-color);
+      padding: 0.6rem 1rem; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-weight: bold; 
+      color: var(--text-secondary);
+    }
+    .add-btn:hover { 
+      background-color: var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .actions { 
+      display: flex; 
+      justify-content: flex-end; 
+      align-items: center; 
+      gap: 1rem; 
+      margin-top: 1.5rem; 
+    }
+    .save-btn { 
+      background-color: var(--accent-primary); 
+      color: white; 
+      border: none; 
+      padding: 0.75rem 1.5rem; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-weight: 600; 
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+    .save-btn:hover { 
+      filter: brightness(1.1);
+      box-shadow: var(--shadow-md);
+    }
+    .delete-btn { 
+      background: none; 
+      border: none; 
+      color: var(--accent-danger); 
+      cursor: pointer; 
+      font-weight: 500; 
+      margin-right: auto; 
+      padding: 0.5rem;
+      border-radius: 6px;
+    }
+    .delete-btn:hover {
+      background-color: #fee2e2;
+    }
   `;
 
   private _handleSubmit(e: Event) {
@@ -67,12 +176,10 @@ export class TaskForm extends LitElement {
     const data = Object.fromEntries(formData.entries());
     const eventData = { ...data, checklist: this._checklistItems };
     
-    // Генерируем событие 'save-task' и передаем в нем все данные формы
     this.dispatchEvent(new CustomEvent('save-task', { detail: { data: eventData }, bubbles: true, composed: true }));
   }
 
   private _handleDelete() {
-    // Генерируем событие 'delete-task', передав ID задачи
     this.dispatchEvent(new CustomEvent('delete-task', { detail: { taskId: this.task?.id }, bubbles: true, composed: true }));
   }
 
@@ -88,7 +195,7 @@ export class TaskForm extends LitElement {
     const foundItem = this._checklistItems.find(i => i.id === item.id);
     if (foundItem) {
       foundItem.completed = completed;
-      this.requestUpdate('_checklistItems'); // Просим Lit перерисовать компонент
+      this.requestUpdate('_checklistItems');
     }
   }
 
@@ -117,7 +224,7 @@ export class TaskForm extends LitElement {
             <div class="checklist-item">
               <input type="checkbox" .checked=${item.completed} @change=${(e: Event) => this._toggleChecklistItem(item, (e.target as HTMLInputElement).checked)}>
               <label class="checklist-text ${item.completed ? 'completed' : ''}">${item.text}</label>
-              <button type="button" class="item-delete-btn" @click=${() => this._deleteChecklistItem(item.id)}>&times;</button>
+              <button type="button" class="item-delete-btn" @click=${() => this._deleteChecklistItem(item.id)} title="Удалить пункт">&times;</button>
             </div>
           `)}
           <div class="add-item">

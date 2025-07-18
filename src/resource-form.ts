@@ -7,21 +7,23 @@ type ResourceType = 'contact' | 'regulation';
 
 @customElement('resource-form')
 export class ResourceForm extends LitElement {
-  // Определяет, какую форму показывать: для контакта или для регламента
   @property({ type: String })
   type: ResourceType = 'contact';
 
-  // Сюда будет передаваться существующий ресурс для редактирования
   @property({ attribute: false })
   item?: Partial<Contact & Regulation>;
 
   static styles = css`
-    form { display: flex; flex-direction: column; gap: 1rem; }
+    form { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 1.25rem; 
+    }
     label { 
       display: block; 
       font-size: 0.875rem; 
       font-weight: 500; 
-      margin-bottom: 0.25rem; 
+      margin-bottom: 0.35rem; 
       color: var(--text-secondary); 
     }
     input, select, textarea {
@@ -34,6 +36,12 @@ export class ResourceForm extends LitElement {
       font-size: 1rem;
       background-color: var(--bg-main);
       color: var(--text-primary);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-primary-light);
     }
     .actions { 
       display: flex; 
@@ -46,13 +54,16 @@ export class ResourceForm extends LitElement {
       background-color: var(--accent-primary); 
       color: white; 
       border: none; 
-      padding: 0.6rem 1.5rem; 
+      padding: 0.75rem 1.5rem; 
       border-radius: 8px; 
       cursor: pointer; 
-      font-weight: bold; 
+      font-weight: 600; 
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
     }
     .save-btn:hover {
         filter: brightness(1.1);
+        box-shadow: var(--shadow-md);
     }
     .delete-btn {
         background: none;
@@ -61,17 +72,22 @@ export class ResourceForm extends LitElement {
         cursor: pointer;
         font-weight: 500;
         margin-right: auto;
+        padding: 0.5rem;
+        border-radius: 6px;
+    }
+    .delete-btn:hover {
+      background-color: #fee2e2;
     }
     .file-section {
         margin-top: 1rem;
         border-top: 1px solid var(--border-color);
-        padding-top: 1rem;
+        padding-top: 1.25rem;
     }
     .file-section h4 {
         margin: 0 0 1rem 0;
         font-weight: 600;
+        font-size: 1rem;
     }
-    /* Заглушка для будущей загрузки файлов */
     .upload-placeholder {
         border: 2px dashed var(--border-color);
         border-radius: 8px;
@@ -147,7 +163,6 @@ export class ResourceForm extends LitElement {
       </div>
       <div class="file-section">
         <h4>Файлы</h4>
-        <!-- TODO: Реализовать логику загрузки и отображения файлов -->
         <div class="upload-placeholder">
           <p>Функционал загрузки файлов будет добавлен на следующем этапе.</p>
         </div>
