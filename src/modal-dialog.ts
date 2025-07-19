@@ -43,6 +43,7 @@ export class ModalDialog extends LitElement {
             flex-shrink: 0; /* Заголовок не должен сжиматься */
         }
         
+        /* Стили для заголовка, который передается через <slot> */
         ::slotted(h2) {
             margin: 0;
             font-size: 1.5rem;
@@ -67,6 +68,7 @@ export class ModalDialog extends LitElement {
             overflow-y: auto; /* Добавляем прокрутку для контента, если он не помещается */
         }
 
+        /* Анимации определены в глобальном style.css, но дублируем на всякий случай */
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }

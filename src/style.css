@@ -4,21 +4,22 @@
 :root {
   --font-main: 'Inter', system-ui, sans-serif;
 
-  --bg-main: #f7f8fc;
+  --bg-main: #f7f8fc; /* Очень светлый, почти белый фон */
   --bg-sidebar: #ffffff;
   --bg-card: #ffffff;
-  --bg-hover: #f0f3f8;
+  --bg-hover: #f0f3f8; /* Чуть темнее основного фона для ховера */
 
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
+  --text-primary: #111827; /* Почти черный для основного текста */
+  --text-secondary: #6b7280; /* Серый для второстепенного текста */
   --text-light: #ffffff;
 
   --border-color: #e5e7eb;
   
-  --accent-primary: #4f46e5;
-  --accent-primary-light: #eef2ff;
+  --accent-primary: #4f46e5; /* Насыщенный индиго */
+  --accent-primary-light: #eef2ff; /* Очень светлый индиго для подложек */
   --accent-danger: #ef4444;
 
+  /* Более мягкие и реалистичные тени */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -26,19 +27,19 @@
 
 /* --- ТЕМНАЯ ТЕМА --- */
 body.dark {
-  --bg-main: #111827;
-  --bg-sidebar: #1f2937;
+  --bg-main: #111827; /* Глубокий темно-синий */
+  --bg-sidebar: #1f2937; /* Чуть светлее фона */
   --bg-card: #1f2937;
   --bg-hover: #374151;
 
-  --text-primary: #f9fafb;
-  --text-secondary: #9ca3af;
+  --text-primary: #f9fafb; /* Почти белый */
+  --text-secondary: #9ca3af; /* Светло-серый */
   --text-light: #ffffff;
 
-  --border-color: #374151;
+  --border-color: #374151; /* Темно-серый для границ */
   
-  --accent-primary: #818cf8;
-  --accent-primary-light: #3730a3;
+  --accent-primary: #818cf8; /* Светлый, "неоновый" индиго */
+  --accent-primary-light: #3730a3; /* Темный индиго для подложек */
   --accent-danger: #f87171;
 }
 
@@ -57,24 +58,15 @@ body {
   height: 100vh;
 }
 
-/* --- НОВЫЙ БЛОК: ГЛОБАЛЬНЫЕ АНИМАЦИИ --- */
-
+/* Глобальные анимации (без изменений) */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
 @keyframes slideInUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-
-@keyframes slideInDown {
-  from { transform: translateY(-20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* Класс-хелпер для применения анимации */
 .animate-fade-in {
   animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }

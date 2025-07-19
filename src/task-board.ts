@@ -18,7 +18,6 @@ export class TaskBoard extends LitElement {
   @property({ attribute: false })
   tasks: Task[] = [];
 
-  // --- НОВОЕ: Состояние для отслеживания перетаскиваемой задачи ---
   @state() private _draggedTaskId: string | null = null;
 
   private _getTasksByStatus(status: Task['status']) {
@@ -31,17 +30,14 @@ export class TaskBoard extends LitElement {
 
   private _handleEditTask(task: Task) {
     this.dispatchEvent(new CustomEvent('edit-task', {
-      detail: { task },
+      detail: { taskId: task.id },
       bubbles: true,
       composed: true
     }));
   }
 
-  // --- НОВЫЕ методы для обработки Drag & Drop ---
-
   private _handleDragStart(e: DragEvent, task: Task) {
     this._draggedTaskId = task.id;
-    // Добавляем класс для визуального эффекта
     (e.target as HTMLElement).classList.add('dragging');
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = 'move';
@@ -49,13 +45,12 @@ export class TaskBoard extends LitElement {
   }
 
   private _handleDragEnd(e: DragEvent) {
-    // Убираем визуальный эффект после окончания перетаскивания
     (e.target as HTMLElement).classList.remove('dragging');
     this._draggedTaskId = null;
   }
 
   private _handleDragOver(e: DragEvent) {
-    e.preventDefault(); // Это обязательно, чтобы событие drop сработало
+    e.preventDefault();
     if (e.dataTransfer) {
       e.dataTransfer.dropEffect = 'move';
     }
@@ -65,7 +60,6 @@ export class TaskBoard extends LitElement {
     e.preventDefault();
     if (!this._draggedTaskId) return;
 
-    // Генерируем новое событие, чтобы сообщить родителю о смене статуса
     this.dispatchEvent(new CustomEvent('update-task-status', {
       detail: {
         taskId: this._draggedTaskId,
@@ -89,7 +83,6 @@ export class TaskBoard extends LitElement {
         ${Object.entries(STATUSES).map(([status, title]) => {
           const tasksInColumn = this._getTasksByStatus(status as Task['status']);
           return html`
-            <!-- ОБНОВЛЕНО: Добавлены обработчики событий для колонки -->
             <div 
               class="column" 
               data-status=${status}
@@ -102,9 +95,9 @@ export class TaskBoard extends LitElement {
               </div>
               <div class="task-list">
                 ${tasksInColumn.map(task => html`
-                  <!-- ОБНОВЛЕНО: Карточка теперь перетаскиваемая -->
+                  <!-- ИЗМЕНЕНИЕ: Добавляем класс с приоритетом к карточке -->
                   <div
-                    class="task-card"
+                    class="task-card priority-${task.priority}"
                     draggable="true"
                     @click=${() => this._handleEditTask(task)}
                     @dragstart=${(e: DragEvent) => this._handleDragStart(e, task)}
@@ -130,11 +123,5 @@ export class TaskBoard extends LitElement {
         })}
       </div>
     `;
-  }
-}
-
-declare global {
-  interface HTMLElementTagNameMap {
-    'task-board': TaskBoard;
   }
 }

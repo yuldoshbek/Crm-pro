@@ -2,22 +2,24 @@
 import { Timestamp } from 'firebase/firestore';
 
 // --- Типы для вложенных данных ---
-// (без изменений)
 export interface ChecklistItem {
   id: string;
   text: string;
   completed: boolean;
 }
+
+// ОБНОВЛЕНО: Детализируем структуру прикрепленного файла
 export interface AttachedFile {
-  id: string;
-  name: string;
-  url: string;
-  path: string;
+  id: string;      // Уникальный ID для записи о файле
+  name: string;    // Оригинальное имя файла
+  url: string;     // URL для скачивания
+  path: string;    // Полный путь в Firebase Storage (нужен для удаления)
+  size: number;    // Размер файла в байтах
+  type: string;    // MIME-тип файла (например, 'image/png')
 }
 
 // --- Основные типы данных ---
 
-// (без изменений)
 export interface Task {
   id: string;
   title: string;
@@ -27,10 +29,9 @@ export interface Task {
   createdAt: Timestamp;
   dueDate?: string;
   checklist?: ChecklistItem[];
-  files?: AttachedFile[];
+  files?: AttachedFile[]; // Тип теперь использует нашу новую структуру
 }
 
-// (без изменений)
 export interface FinanceOperation {
   id: string;
   title: string;
@@ -41,7 +42,6 @@ export interface FinanceOperation {
   comment?: string;
 }
 
-// (без изменений)
 export interface CalendarEvent {
     id: string;
     title: string;
@@ -52,7 +52,6 @@ export interface CalendarEvent {
     color: string;
 }
 
-// (без изменений)
 export interface Contact {
     id: string;
     name: string;
@@ -63,21 +62,19 @@ export interface Contact {
     notes?: string;
 }
 
-// (без изменений)
 export interface Regulation {
     id: string;
     title: string;
     category?: string;
     description?: string;
-    files?: AttachedFile[];
+    files?: AttachedFile[]; // Регламенты тоже могут иметь файлы
 }
 
-// --- НОВЫЙ ТИП ДЛЯ РАБОЧИХ ПРОСТРАНСТВ ---
 export interface Workspace {
     id: string;
     name: string;
     description?: string;
-    ownerId: string; // ID пользователя, создавшего пространство
-    members: string[]; // Массив ID всех участников
+    ownerId: string;
+    members: string[];
     createdAt: Timestamp;
 }

@@ -16,6 +16,7 @@ export class ResourceView extends LitElement {
   @state()
   private _activeTab: ResourceViewTab = 'contacts';
 
+  // --- НОВЫЕ, ПЕРЕРАБОТАННЫЕ СТИЛИ ---
   static styles = css`
     :host {
       display: block;
@@ -43,10 +44,12 @@ export class ResourceView extends LitElement {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      transition: background-color 0.2s ease;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
     }
     .add-btn:hover {
       filter: brightness(1.1);
+      box-shadow: var(--shadow-md);
     }
 
     .tabs {
@@ -63,12 +66,19 @@ export class ResourceView extends LitElement {
       font-size: 1rem;
       font-weight: 600;
       color: var(--text-secondary);
-      border-bottom: 2px solid transparent;
+      border-bottom: 3px solid transparent;
       margin-bottom: -2px;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+    .tab-btn:hover {
+      color: var(--text-primary);
     }
     .tab-btn.active {
       color: var(--accent-primary);
       border-bottom-color: var(--accent-primary);
+    }
+    .tab-btn i {
+      margin-right: 0.5rem;
     }
 
     .grid-container {
@@ -77,7 +87,7 @@ export class ResourceView extends LitElement {
       gap: 1.5rem;
     }
 
-    .contact-card, .regulation-card {
+    .resource-card {
       background-color: var(--bg-card);
       border-radius: 12px;
       padding: 1.5rem;
@@ -85,37 +95,51 @@ export class ResourceView extends LitElement {
       border: 1px solid var(--border-color);
       cursor: pointer;
       transition: all 0.2s ease-in-out;
+      display: flex;
+      flex-direction: column;
     }
-    .contact-card:hover, .regulation-card:hover {
+    .resource-card:hover {
       transform: translateY(-5px);
       box-shadow: var(--shadow-md);
+      border-color: var(--accent-primary);
     }
     .card-header {
       font-size: 1.2rem;
       font-weight: 600;
       color: var(--text-primary);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
     }
     .card-subheader {
       color: var(--text-secondary);
       font-size: 0.9rem;
       margin-bottom: 1rem;
+      min-height: 1.2em; /* Резервируем место, чтобы карточки не прыгали */
     }
     .card-info {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.75rem;
       font-size: 0.9rem;
+      margin-top: auto; /* Прижимаем информацию к низу */
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
     }
     .info-item {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
       color: var(--text-secondary);
     }
     .info-item i {
       width: 16px;
       text-align: center;
+      color: var(--accent-primary);
+    }
+    .no-items {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-secondary);
     }
   `;
 
@@ -130,15 +154,14 @@ export class ResourceView extends LitElement {
   }
 
   private _renderContactsList() {
-    if (this.contacts.length === 0) {
-      return html`<p>Список контактов пуст.</p>`;
-    }
     return html`
       <div class="grid-container">
-        ${this.contacts.map(contact => html`
-          <div class="contact-card" @click=${() => this._handleEditClick(contact, 'contacts')}>
+        ${this.contacts.length === 0 ? html`
+          <div class="no-items">Список контактов пуст.</div>
+        ` : this.contacts.map(contact => html`
+          <div class="resource-card" @click=${() => this._handleEditClick(contact, 'contacts')}>
             <div class="card-header">${contact.name}</div>
-            <div class="card-subheader">${contact.role || 'Контакт'}</div>
+            <div class="card-subheader">${contact.role || ''}</div>
             <div class="card-info">
               ${contact.phone ? html`<div class="info-item"><i class="fas fa-phone"></i><span>${contact.phone}</span></div>` : ''}
               ${contact.email ? html`<div class="info-item"><i class="fas fa-envelope"></i><span>${contact.email}</span></div>` : ''}
@@ -150,19 +173,19 @@ export class ResourceView extends LitElement {
   }
 
   private _renderRegulationsList() {
-    if (this.regulations.length === 0) {
-      return html`<p>Список регламентов пуст.</p>`;
-    }
     return html`
       <div class="grid-container">
-        ${this.regulations.map(reg => html`
-          <div class="regulation-card" @click=${() => this._handleEditClick(reg, 'regulations')}>
+        ${this.regulations.length === 0 ? html`
+          <div class="no-items">Список регламентов пуст.</div>
+        ` : this.regulations.map(reg => html`
+          <div class="resource-card" @click=${() => this._handleEditClick(reg, 'regulations')}>
             <div class="card-header">${reg.title}</div>
-            <div class="card-subheader">${reg.category || 'Общий'}</div>
+            <div class="card-subheader">${reg.category || ''}</div>
             <div class="card-info">
-              ${reg.files && reg.files.length > 0 ? html`
-                <div class="info-item"><i class="fas fa-paperclip"></i><span>${reg.files.length} вложений</span></div>
-              ` : ''}
+              <div class="info-item">
+                <i class="fas fa-paperclip"></i>
+                <span>${reg.files && reg.files.length > 0 ? `${reg.files.length} вложений` : 'Нет вложений'}</span>
+              </div>
             </div>
           </div>
         `)}
@@ -208,11 +231,5 @@ export class ResourceView extends LitElement {
         ${this._renderTabContent()}
       </div>
     `;
-  }
-}
-
-declare global {
-  interface HTMLElementTagNameMap {
-    'resource-view': ResourceView;
   }
 }

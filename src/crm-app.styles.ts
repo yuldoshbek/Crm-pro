@@ -16,7 +16,7 @@ export const crmAppStyles = css`
   }
   
   .sidebar {
-    width: 260px;
+    width: 260px; /* Немного шире для "воздуха" */
     flex-shrink: 0;
     background-color: var(--bg-sidebar);
     border-right: 1px solid var(--border-color);
@@ -27,7 +27,7 @@ export const crmAppStyles = css`
   }
   .main-content {
     flex-grow: 1;
-    padding: 2rem 3rem;
+    padding: 2rem 3rem; /* Увеличиваем отступы */
     overflow-y: auto;
   }
 
@@ -41,12 +41,16 @@ export const crmAppStyles = css`
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary);
-    /* Добавляем небольшой градиент для акцента */
+    /* Добавляем градиент для акцента */
     background: linear-gradient(45deg, var(--accent-primary), #3b82f6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text; /* Стандартное свойство */
   }
 
+  .nav-menu {
+    flex-grow: 1; /* Занимает все доступное пространство, отодвигая профиль вниз */
+  }
   .nav-menu ul {
     list-style: none;
     padding: 0;
@@ -55,7 +59,7 @@ export const crmAppStyles = css`
   .nav-menu li a {
     display: flex;
     align-items: center;
-    gap: 0.85rem; /* Немного увеличим отступ */
+    gap: 0.85rem;
     padding: 0.8rem 1rem;
     margin-bottom: 0.5rem;
     border-radius: 8px;
@@ -66,7 +70,7 @@ export const crmAppStyles = css`
   }
   .nav-menu li a:hover {
     background-color: var(--bg-hover);
-    color: var(--accent-primary);
+    color: var(--text-primary); /* При наведении текст становится основным */
   }
   .nav-menu li a.active {
     background-color: var(--accent-primary);
@@ -76,18 +80,10 @@ export const crmAppStyles = css`
   .nav-menu li a i {
     width: 20px;
     text-align: center;
-    font-size: 1.1rem; /* Сделаем иконки чуть крупнее */
-  }
-
-  /* Разделитель перед настройками */
-  .nav-menu li.separator {
-    height: 1px;
-    background-color: var(--border-color);
-    margin: 1rem 0;
+    font-size: 1.1rem;
   }
 
   .user-profile {
-    margin-top: auto;
     padding-top: 1.5rem;
     border-top: 1px solid var(--border-color);
     display: flex;
@@ -105,6 +101,11 @@ export const crmAppStyles = css`
     justify-content: center;
     font-weight: bold;
     text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .user-info {
+    flex-grow: 1;
+    overflow: hidden; /* Важно для работы text-overflow */
   }
   .user-email { 
     font-weight: 500;
@@ -112,7 +113,7 @@ export const crmAppStyles = css`
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100px; /* Уменьшим, чтобы кнопки помещались */
+    font-size: 0.9rem;
   }
   .logout-btn {
     background: none;
@@ -122,11 +123,7 @@ export const crmAppStyles = css`
     font-size: 1.2rem;
     padding: 0.5rem;
     border-radius: 50%;
-    margin-left: auto; /* Прижимаем первую кнопку вправо */
-  }
-  /* Убираем лишний отступ у второй кнопки */
-  .logout-btn + .logout-btn {
-      margin-left: 0.25rem;
+    flex-shrink: 0;
   }
   .logout-btn:hover {
     background-color: var(--bg-hover);

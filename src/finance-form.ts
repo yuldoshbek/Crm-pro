@@ -8,6 +8,7 @@ export class FinanceForm extends LitElement {
   @property({ attribute: false })
   operation?: FinanceOperation;
 
+  // --- ОБНОВЛЕННЫЕ СТИЛИ ---
   static styles = css`
     form { 
       display: flex; 
@@ -154,11 +155,5 @@ export class FinanceForm extends LitElement {
         </div>
       </form>
     `;
-  }
-}
-
-declare global {
-  interface HTMLElementTagNameMap {
-    'finance-form': FinanceForm;
   }
 }

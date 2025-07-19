@@ -2,9 +2,11 @@
 import { LitElement, html, css } from 'lit';
 import type { TemplateResult } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from './firebase-init.js';
+import { auth } from './firebase-init.js';
 import type { Workspace } from './types.js';
+
+// --- НОВЫЙ ИМПОРТ: Используем функции из нашего сервисного слоя ---
+import { listenToWorkspaces, createWorkspace } from './firebase-service.js';
 
 import './modal-dialog.js';
 import './workspace-form.js';
@@ -15,6 +17,8 @@ export class WorkspaceSelector extends LitElement {
   private _workspaces: Workspace[] = [];
   @state()
   private _isLoading = true;
+  @state()
+  private _isCreating = false; // Новое состояние для отслеживания процесса создания
   @state()
   private _modalContent: TemplateResult | null = null;
   @state()
@@ -95,6 +99,22 @@ export class WorkspaceSelector extends LitElement {
       font-weight: 600;
       color: var(--accent-primary);
     }
+    /* Стили для кнопки в форме */
+    .save-btn {
+      background-color: var(--accent-primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+    .save-btn:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+    }
   `;
 
   connectedCallback() {
@@ -113,18 +133,14 @@ export class WorkspaceSelector extends LitElement {
       this._isLoading = false;
       return;
     }
-    const q = query(collection(db, 'workspaces'), where('members', 'array-contains', user.uid));
-    this._unsubscribeWorkspaces = onSnapshot(q, (snapshot) => {
-      this._workspaces = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Workspace));
-      this._isLoading = false;
-    }, (error) => {
-      console.error("Ошибка при загрузке рабочих пространств:", error);
+    // --- ИСПОЛЬЗУЕМ СЕРВИС ---
+    this._unsubscribeWorkspaces = listenToWorkspaces(user.uid, (workspaces) => {
+      this._workspaces = workspaces;
       this._isLoading = false;
     });
   }
 
   private _selectWorkspace(id: string) {
-    // ИСПРАВЛЕНИЕ: Добавляем bubbles и composed, чтобы событие "вышло" из компонента
     this.dispatchEvent(new CustomEvent('select-workspace', {
       detail: { workspaceId: id },
       bubbles: true,
@@ -132,53 +148,56 @@ export class WorkspaceSelector extends LitElement {
     }));
   }
 
-  private _createWorkspace() {
-    this._openWorkspaceModal();
-  }
-
   private _openWorkspaceModal() {
     this._modalTitle = 'Создать новое пространство';
     this._modalContent = html`
       <workspace-form @save-workspace=${this._handleSaveWorkspace}></workspace-form>
+      <!-- Перемещаем кнопку внутрь модального окна для управления состоянием -->
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+          <button 
+            class="save-btn" 
+            @click=${() => this.shadowRoot?.querySelector('workspace-form')?.shadowRoot?.querySelector('form')?.requestSubmit()}
+            ?disabled=${this._isCreating}
+          >
+            ${this._isCreating ? 'Создание...' : 'Сохранить'}
+          </button>
+      </div>
     `;
   }
 
   private _closeModal() {
     this._modalContent = null;
     this._modalTitle = '';
+    this._isCreating = false; // Сбрасываем состояние при закрытии
   }
 
+  // --- ЛОГИКА СОЗДАНИЯ УПРОЩЕНА И УЛУЧШЕНА ---
   private async _handleSaveWorkspace(e: CustomEvent) {
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user || this._isCreating) return;
 
-    // ИСПРАВЛЕНИЕ: Временно отписываемся от слушателя, чтобы избежать гонки состояний
-    this._unsubscribeWorkspaces?.();
-    this._unsubscribeWorkspaces = null;
-
+    this._isCreating = true;
     const { data } = e.detail;
-    const newWorkspace = {
-      name: data.name,
-      description: data.description || '',
-      ownerId: user.uid,
-      members: [user.uid],
-      createdAt: serverTimestamp()
-    };
 
     try {
-      const docRef = await addDoc(collection(db, 'workspaces'), newWorkspace);
-      console.log("Пространство создано с ID: ", docRef.id);
+      // Вызываем функцию из сервисного слоя
+      const newWorkspaceId = await createWorkspace(data, user.uid);
       
-      // Сразу же переходим в новый проект
-      this._selectWorkspace(docRef.id);
-
+      if (newWorkspaceId) {
+        console.log("Пространство создано с ID: ", newWorkspaceId);
+        // Сразу же переходим в новый проект
+        this._selectWorkspace(newWorkspaceId);
+      } else {
+        // Обработка случая, если сервис вернул ошибку
+        console.error("Не удалось создать пространство.");
+        this._isCreating = false;
+      }
     } catch (error) {
       console.error("Ошибка при создании пространства: ", error);
-      // Если произошла ошибка, подписываемся обратно
-      this._listenForWorkspaces();
+      this._isCreating = false;
     }
     
-    this._closeModal();
+    // Модальное окно закроется автоматически при переходе в crm-app
   }
 
   render() {
@@ -197,8 +216,8 @@ export class WorkspaceSelector extends LitElement {
               <div class="workspace-description">${ws.description || 'Нет описания'}</div>
             </div>
           `)}
-          <div class="add-card" @click=${this._createWorkspace}>
-            <div class="icon"><i class="fas fa-plus-circle"></i></div>
+          <div class="add-card" @click=${this._openWorkspaceModal}>
+            <div class.icon><i class="fas fa-plus-circle"></i></div>
             <div class="text">Создать пространство</div>
           </div>
         </div>
@@ -210,11 +229,5 @@ export class WorkspaceSelector extends LitElement {
         </modal-dialog>
       ` : ''}
     `;
-  }
-}
-
-declare global {
-  interface HTMLElementTagNameMap {
-    'workspace-selector': WorkspaceSelector;
   }
 }
