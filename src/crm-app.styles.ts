@@ -16,7 +16,7 @@ export const crmAppStyles = css`
   }
   
   .sidebar {
-    width: 260px; /* Немного шире для "воздуха" */
+    width: 260px;
     flex-shrink: 0;
     background-color: var(--bg-sidebar);
     border-right: 1px solid var(--border-color);
@@ -27,7 +27,7 @@ export const crmAppStyles = css`
   }
   .main-content {
     flex-grow: 1;
-    padding: 2rem 3rem; /* Увеличиваем отступы */
+    padding: 2rem 3rem;
     overflow-y: auto;
   }
 
@@ -41,15 +41,14 @@ export const crmAppStyles = css`
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary);
-    /* Добавляем градиент для акцента */
     background: linear-gradient(45deg, var(--accent-primary), #3b82f6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    background-clip: text; /* Стандартное свойство */
+    background-clip: text;
   }
 
   .nav-menu {
-    flex-grow: 1; /* Занимает все доступное пространство, отодвигая профиль вниз */
+    flex-grow: 1;
   }
   .nav-menu ul {
     list-style: none;
@@ -70,16 +69,20 @@ export const crmAppStyles = css`
   }
   .nav-menu li a:hover {
     background-color: var(--bg-hover);
-    color: var(--text-primary); /* При наведении текст становится основным */
+    color: var(--text-primary);
   }
   .nav-menu li a.active {
     background-color: var(--accent-primary);
     color: white;
     box-shadow: var(--shadow-md);
   }
-  .nav-menu li a i {
+  /* ИСПРАВЛЕНИЕ: Используем flexbox для идеального центрирования иконки */
+  .nav-menu li a .icon-wrapper {
     width: 20px;
-    text-align: center;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1.1rem;
   }
 
@@ -105,7 +108,7 @@ export const crmAppStyles = css`
   }
   .user-info {
     flex-grow: 1;
-    overflow: hidden; /* Важно для работы text-overflow */
+    overflow: hidden;
   }
   .user-email { 
     font-weight: 500;

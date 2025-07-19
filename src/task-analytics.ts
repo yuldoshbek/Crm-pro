@@ -12,7 +12,7 @@ export class TaskAnalytics extends LitElement {
 
   private charts: { [key: string]: ApexCharts } = {};
 
-  // --- НОВЫЕ, ПРОФЕССИОНАЛЬНЫЕ СТИЛИ ДЛЯ ДАШБОРДА ---
+  // Возвращаем старые, проверенные стили
   static styles = css`
     :host {
       display: block;
@@ -35,44 +35,22 @@ export class TaskAnalytics extends LitElement {
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-sm);
     }
-
-    /* Адаптивная сетка для KPI-карточек */
     .stat-card {
-      grid-column: span 12; /* 1 колонка на мобильных */
+      grid-column: span 12;
     }
-    @media (min-width: 640px) { .stat-card { grid-column: span 6; } } /* 2 колонки на планшетах */
-    @media (min-width: 1024px) { .stat-card { grid-column: span 4; } } /* 3 колонки на ноутбуках */
-    @media (min-width: 1280px) { .stat-card.kpi-total, .stat-card.kpi-progress, .stat-card.kpi-done { grid-column: span 2; } } /* 5 карточек в ряд на больших экранах */
-    @media (min-width: 1280px) { .stat-card.kpi-overdue, .stat-card.kpi-completion { grid-column: span 3; } }
-
+    @media (min-width: 640px) { .stat-card { grid-column: span 6; } }
+    @media (min-width: 1280px) { .stat-card { grid-column: span 3; } }
 
     .stat-header {
       color: var(--text-secondary);
       font-size: 0.9rem;
-      font-weight: 500;
+      margin-bottom: 0.5rem;
     }
     .stat-value {
-      font-size: 2.25rem;
+      font-size: 2.5rem;
       font-weight: 700;
       color: var(--text-primary);
-      margin-top: 0.5rem;
     }
-
-    /* Адаптивная сетка для графиков и виджетов */
-    .chart-container.activity { grid-column: span 12; }
-    .chart-container.status { grid-column: span 12; }
-    .chart-container.priority { grid-column: span 12; }
-    .chart-container.completion-rate { grid-column: span 12; }
-    .chart-container.recent-activity { grid-column: span 12; }
-
-    @media (min-width: 1024px) {
-      .chart-container.activity { grid-column: span 12; }
-      .chart-container.status { grid-column: span 7; }
-      .chart-container.priority { grid-column: span 5; }
-      .chart-container.completion-rate { grid-column: span 5; }
-      .chart-container.recent-activity { grid-column: span 7; }
-    }
-
     .chart-title {
       font-size: 1.1rem;
       font-weight: 600;
@@ -80,23 +58,21 @@ export class TaskAnalytics extends LitElement {
       margin-bottom: 1.5rem;
     }
 
-    /* Стили для нового виджета "Лента активности" */
-    .activity-list { list-style: none; padding: 0; margin: 0; }
-    .activity-item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.75rem 0;
+    .chart-container.activity { grid-column: span 12; }
+    .chart-container.status { grid-column: span 12; }
+    .chart-container.priority { grid-column: span 12; }
+    .chart-container.completion { grid-column: span 12; }
+
+    @media (min-width: 768px) {
+      .chart-container.status { grid-column: span 6; }
+      .chart-container.completion { grid-column: span 6; }
     }
-    .activity-item:not(:last-child) { border-bottom: 1px solid var(--border-color); }
-    .activity-icon {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      background-color: #d1fae5; color: #047857;
+    @media (min-width: 1280px) {
+      .chart-container.activity { grid-column: span 12; }
+      .chart-container.status { grid-column: span 5; }
+      .chart-container.priority { grid-column: span 7; }
+      .chart-container.completion { grid-column: span 12; }
     }
-    .activity-text { flex-grow: 1; color: var(--text-secondary); }
-    .activity-text strong { color: var(--text-primary); font-weight: 500; }
   `;
   
   firstUpdated() {
@@ -124,11 +100,12 @@ export class TaskAnalytics extends LitElement {
   
   private _updateAllCharts() {
     if (this.charts.activity) this.charts.activity.updateSeries([{ data: this._getActivityData() }]);
-    if (this.charts.status) this.charts.status.updateOptions(this._getStatusChartOptions());
-    if (this.charts.priority) this.charts.priority.updateOptions(this._getPriorityChartOptions());
+    if (this.charts.status) this.charts.status.updateSeries(this._getStatusData());
+    if (this.charts.priority) this.charts.priority.updateSeries([{ data: this._getPriorityData() }]);
     if (this.charts.completion) this.charts.completion.updateSeries(this._getCompletionRateData());
   }
 
+  // Возвращаем старую, рабочую логику
   private _getActivityData = (): number[] => {
     const seriesData = Array(7).fill(0);
     const today = new Date();
@@ -146,38 +123,17 @@ export class TaskAnalytics extends LitElement {
     return seriesData;
   };
 
-  private _getStatusChartOptions(): ApexOptions {
+  private _getStatusData = (): number[] => {
     const statuses: Record<Task['status'], number> = { todo: 0, inprogress: 0, review: 0, done: 0 };
     this.tasks.forEach(task => { statuses[task.status]++; });
-    
-    return {
-      series: [{ data: Object.values(statuses) }],
-      chart: { type: 'bar', height: 350, toolbar: { show: false } },
-      plotOptions: { bar: { borderRadius: 4, horizontal: true, distributed: true } },
-      dataLabels: { enabled: false },
-      xaxis: { categories: ['К выполнению', 'В работе', 'На проверке', 'Готово'], labels: { style: { colors: 'var(--text-secondary)' } } },
-      yaxis: { labels: { style: { colors: 'var(--text-secondary)' } } },
-      colors: ['#3b82f6', '#f97316', '#8b5cf6', '#10b981'],
-      legend: { show: false },
-      grid: { borderColor: 'var(--border-color)', strokeDashArray: 4 },
-      tooltip: { theme: document.body.classList.contains('dark') ? 'dark' : 'light' }
-    };
-  }
+    return Object.values(statuses);
+  };
 
-  private _getPriorityChartOptions(): ApexOptions {
+  private _getPriorityData = (): number[] => {
     const priorities: Record<Task['priority'], number> = { high: 0, medium: 0, low: 0 };
     this.tasks.forEach(task => { priorities[task.priority]++; });
-
-    return {
-      series: Object.values(priorities),
-      chart: { type: 'donut', height: 350, background: 'transparent' },
-      labels: ['Высокий', 'Средний', 'Низкий'],
-      colors: ['#ef4444', '#f97316', '#10b981'],
-      legend: { position: 'bottom', labels: { colors: 'var(--text-secondary)' } },
-      dataLabels: { enabled: true, style: { colors: ['var(--text-light)'] }, dropShadow: { enabled: false } },
-      tooltip: { theme: document.body.classList.contains('dark') ? 'dark' : 'light', y: { formatter: (val) => `${val} задач` } }
-    };
-  }
+    return Object.values(priorities);
+  };
 
   private _getCompletionRateData = (): number[] => {
     const total = this.tasks.length;
@@ -190,7 +146,7 @@ export class TaskAnalytics extends LitElement {
     const container = this.shadowRoot?.querySelector('#activity-chart');
     if (!container) return;
     const options: ApexOptions = {
-      chart: { type: 'area', height: 350, toolbar: { show: false }, zoom: { enabled: false } },
+      chart: { type: 'area', height: 350, toolbar: { show: false }, zoom: { enabled: false }, background: 'transparent' },
       series: [{ name: "Создано задач", data: this._getActivityData() }],
       xaxis: { categories: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'], labels: { style: { colors: 'var(--text-secondary)' } }, axisBorder: { show: false }, axisTicks: { show: false } },
       yaxis: { labels: { style: { colors: 'var(--text-secondary)' } } },
@@ -208,14 +164,36 @@ export class TaskAnalytics extends LitElement {
   private _renderStatusChart() {
     const container = this.shadowRoot?.querySelector('#status-chart');
     if (!container) return;
-    this.charts.status = new ApexCharts(container, this._getStatusChartOptions());
+    const options: ApexOptions = {
+      chart: { type: 'donut', height: 350, background: 'transparent' },
+      series: this._getStatusData(),
+      labels: ['К выполнению', 'В работе', 'На проверке', 'Готово'],
+      colors: ['#3b82f6', '#f97316', '#8b5cf6', '#10b981'],
+      legend: { position: 'bottom', labels: { colors: 'var(--text-secondary)' } },
+      dataLabels: { enabled: false },
+      plotOptions: { pie: { donut: { labels: { show: true, total: { show: true, label: 'Всего', color: 'var(--text-secondary)', formatter: (w) => w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0).toString() } } } } },
+      tooltip: { theme: document.body.classList.contains('dark') ? 'dark' : 'light', y: { formatter: (val) => `${val} задач` } }
+    };
+    this.charts.status = new ApexCharts(container, options);
     this.charts.status.render();
   }
 
   private _renderPriorityChart() {
     const container = this.shadowRoot?.querySelector('#priority-chart');
     if (!container) return;
-    this.charts.priority = new ApexCharts(container, this._getPriorityChartOptions());
+    const options: ApexOptions = {
+      chart: { type: 'bar', height: 350, toolbar: { show: false }, background: 'transparent' },
+      series: [{ name: 'Задачи', data: this._getPriorityData() }],
+      plotOptions: { bar: { borderRadius: 4, horizontal: true, distributed: true } },
+      dataLabels: { enabled: false },
+      xaxis: { categories: ['Высокий', 'Средний', 'Низкий'], labels: { style: { colors: 'var(--text-secondary)' } } },
+      yaxis: { labels: { show: false } },
+      colors: ['#ef4444', '#f97316', '#10b981'],
+      legend: { show: false },
+      grid: { borderColor: 'var(--border-color)', strokeDashArray: 4, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
+      tooltip: { theme: document.body.classList.contains('dark') ? 'dark' : 'light' }
+    };
+    this.charts.priority = new ApexCharts(container, options);
     this.charts.priority.render();
   }
 
@@ -223,23 +201,24 @@ export class TaskAnalytics extends LitElement {
     const container = this.shadowRoot?.querySelector('#completion-chart');
     if (!container) return;
     const options: ApexOptions = {
-      chart: { type: 'radialBar', height: 350 },
+      chart: { type: 'radialBar', height: 350, background: 'transparent' },
       series: this._getCompletionRateData(),
-      // ИСПРАВЛЕНИЕ: Добавляем 'labels' на верхний уровень для отображения текста
-      labels: ['Выполнено'],
       plotOptions: {
         radialBar: {
-          hollow: { margin: 15, size: '70%' },
+          startAngle: -135,
+          endAngle: 135,
+          hollow: { margin: 15, size: '70%', background: 'transparent' },
           dataLabels: {
             name: { 
-              show: true, 
-              // ИСПРАВЛЕНИЕ: Убираем некорректное свойство 'label', так как текст берется из labels выше
-              color: 'var(--text-secondary)' 
+              show: true,
+              // ИСПРАВЛЕНИЕ: Сдвигаем надпись "Выполнено" ВВЕРХ
+              offsetY: -10
             },
             value: { 
               fontSize: '2.5rem', 
               fontWeight: 700, 
               color: 'var(--text-primary)', 
+              // ИСПРАВЛЕНИЕ: Сдвигаем проценты ВНИЗ
               offsetY: 10, 
               formatter: (val) => `${val}%` 
             }
@@ -248,6 +227,7 @@ export class TaskAnalytics extends LitElement {
       },
       fill: { colors: ['var(--accent-primary)'] },
       stroke: { lineCap: 'round' },
+      labels: ['Выполнено'],
     };
     this.charts.completion = new ApexCharts(container, options);
     this.charts.completion.render();
@@ -256,35 +236,44 @@ export class TaskAnalytics extends LitElement {
   render() {
     const totalTasks = this.tasks.length;
     const doneTasks = this.tasks.filter(t => t.status === 'done').length;
-    const overdueTasks = this.tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'done').length;
+    const overdueTasks = this.tasks.filter(t => t.status !== 'done' && t.dueDate && new Date(t.dueDate) < new Date()).length;
     const inProgressTasks = this.tasks.filter(t => t.status === 'inprogress').length;
-    const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-    const recentCompleted = this.tasks.filter(t => t.status === 'done').slice(0, 5);
 
     return html`
       <div class="page-header"><h1>Аналитика по задачам</h1></div>
       <div class="analytics-grid">
-        <div class="stat-card kpi-total"><div class="stat-header">Всего задач</div><div class="stat-value">${totalTasks}</div></div>
-        <div class="stat-card kpi-progress"><div class="stat-header">В работе</div><div class="stat-value">${inProgressTasks}</div></div>
-        <div class="stat-card kpi-done"><div class="stat-header">Выполнено</div><div class="stat-value">${doneTasks}</div></div>
-        <div class="stat-card kpi-overdue"><div class="stat-header">Просрочено</div><div class="stat-value">${overdueTasks}</div></div>
-        <div class="stat-card kpi-completion"><div class="stat-header">Процент выполнения</div><div class="stat-value">${completionRate}%</div></div>
+        <div class="stat-card">
+          <div class="stat-header">Всего задач</div>
+          <div class="stat-value">${totalTasks}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">В работе</div>
+          <div class="stat-value">${inProgressTasks}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">Выполнено</div>
+          <div class="stat-value">${doneTasks}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">Просрочено</div>
+          <div class="stat-value">${overdueTasks}</div>
+        </div>
 
-        <div class="chart-container activity"><h4 class="chart-title">Активность за неделю</h4><div id="activity-chart"></div></div>
-        <div class="chart-container status"><h4 class="chart-title">Задачи по статусу</h4><div id="status-chart"></div></div>
-        <div class="chart-container priority"><h4 class="chart-title">Приоритеты</h4><div id="priority-chart"></div></div>
-        
-        <div class="chart-container completion-rate"><h4 class="chart-title">Общий прогресс</h4><div id="completion-chart"></div></div>
-        <div class="chart-container recent-activity">
-          <h4 class="chart-title">Лента активности</h4>
-          <ul class="activity-list">
-            ${recentCompleted.length > 0 ? recentCompleted.map(task => html`
-              <li class="activity-item">
-                <div class="activity-icon"><i class="fas fa-check"></i></div>
-                <div class="activity-text">Задача <strong>${task.title}</strong> была выполнена.</div>
-              </li>
-            `) : html`<p style="color: var(--text-secondary);">Нет выполненных задач.</p>`}
-          </ul>
+        <div class="chart-container activity">
+          <h4 class="chart-title">Активность за неделю</h4>
+          <div id="activity-chart"></div>
+        </div>
+        <div class="chart-container status">
+          <h4 class="chart-title">Задачи по статусу</h4>
+          <div id="status-chart"></div>
+        </div>
+        <div class="chart-container priority">
+          <h4 class="chart-title">Распределение по приоритетам</h4>
+          <div id="priority-chart"></div>
+        </div>
+        <div class="chart-container completion">
+          <h4 class="chart-title">Процент выполнения</h4>
+          <div id="completion-chart"></div>
         </div>
       </div>
     `;
